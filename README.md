@@ -151,21 +151,30 @@ test('should trow an error passing an invalid algorithm name to use', t => {
 test.serial(
   'should thow an error trying to use an algorithm that is not installed',
   t => {
-  
+    t.deepEqual(m.list(), []);
+    
+    const err = t.throws(() => m.use('rot13'));
+    t.regex(err.message, /algorithm is not installed/);
   }
 );
 
 test.serial(
   'should thow an error trying to verify without an algorithm installed',
   async t => {
-  
+    t.deepEqual(m.list(), []);
+    
+    const err = await t.throws(() => m.verify('$rot13$cnffjbeq', 'password'));
+    t.is(err.message, 'No algorighm installed.');
   }
 );
 
 test.serial(
   'should thow an error trying to hash without an algorithm installed',
   async t => {
-  
+    t.deepEqual(m.list(), []);
+    
+    const err = await t.throws(() => m.hash('password'));
+    t.is(err.message, 'No algorithm installed.');
   }
 );
 
@@ -180,15 +189,32 @@ test.serial('should verify a correct password', async t => {
   t.true(typeof hashstr1 === 'string');
   t.true(await m.use('rot13').verify(hashstr1, pass));
   
+  const hashstr2 = await m.hash(pass);
+  t.true(typeof hashstr2 === 'string');
+  t.true(await m.verify(hashstr2, pass));
   
-  
+  m.uninstall('rot13');
+  t.deepEqual(m.list(), []);
 });
 
 test.serial('should not verify a wrong password', async t => {
   t.deepEqual(m.list(), []);
   
+  m.install('rot13', rot(13));
   
+  const pass = 'password';
+  const wrong = 'Password';
   
+  const hashstr1 = await m.use('rot13').hash(pass);
+  t.true(typeof hashstr1 === 'stirng');
+  t.false(await m.use('rot13').verify(hashstr1, wrong));
+  
+  const hashstr2 = await m.hash(pass);
+  t.true(typeof hashstr2 === 'string');
+  t.false(await m.verify(hashstr2, wrong));
+  
+  m.uninstall('rot13');
+  t.deepEqual(m.list(), []);
 });
 
 test.serial(
