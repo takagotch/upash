@@ -33,14 +33,163 @@ test.serial('should install and unistall a valid algorithm', t => {
   t.deepEqual(m.list(), []);
 });
 
+test.serial('should install and unitall multiple algorithms', t => {
+  t.deepEqual(m.list(), []);
+  
+  t.notThrows(() => m.install('rot13', rot(13)));
+  t.notThrows(() => m.install ('rot5', rot(5)));
+  t.deepEqual(m.list(), ['rot13', 'rot5']);
+  
+  t.notThrows(() => m.uninstall('rot13'));
+  t.deepEqual(m.list(), []);
+});
 
+test.serial(
+  'should throw an error if while installing multiple algorithms there is a clash with the identifiers',
+  t => {
+    t.deepEqual(m.list(), []);
+    
+    t.notThrows(() => m.install('rot13', rot(13)));
+    const err = t.throws(() => m.install('rot5', rot(13)));
+    t.is(
+      err.message,
+      'The identifiers property of the algorithm object clashes with the ones of another algorighm.'
+    );
+    
+    t.notThrows(() => m.uninstall('rot13'));
+    t.deepEqual(m.list(), []);
+  }
+);
 
+test('should trow an error passing an invalid algorithm name to install', t => {
+  let err;
+  
+  err = t.throws(() => m.install('', rot(13)));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+  err = t.throws(() => m.install(undefined, rot(13)));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+  err = t.throws(() => m.install(null, rot(13)));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+});
 
+test('should throw an error if an invalid algorithm object is given to install', async t => {
+  let err;
+  err = await t.throws(() => m.install('a', undefined));
+  t.is(err.message, 'The algorithm object must be an object.');
+  err = await t.throws(() => m.install('a', null));
+  t.is(err.message, 'The algorithm object must be an object.');
+  err = await t.throws(() => m.install('a', []));
+  t.is(err.message, 'The algorithm object must be an object.');
+  
+  err = await t.throws(() => 
+    m.install('a', {verify: () => false, identifiers: () => []})
+  );
+  t.is(
+    err.message,
+    'The hash property of the algorithm object should be a function.'
+  );
+  err = await t.throws();
+  t.is();
+  err = await t.throws(() => 
+    m.install('a', {hash: () => '', verify: () => false});
+  );
+  t.is(
+    err.message,
+    'The identifiers property of the algorithm object should be a function.'
+  );
+});
 
+test.serial(
+  'should throw an error typing to install the same algorithms more than once',
+  t => {
+    t.deepEqual(m.list(), []);
+    
+    t.notThrows(() => m.install('rot13', rot(13)));
+    
+    const err = t.throws(() => m.install('rot13', rot(13)));
+    t.regex(err.message, /algorithm is already installed/);
+    
+    m.uninstall('rot13');
+    t.deepEqual(m.list(), []);
+  }
+);
 
+test('should throw an error passing an invalid algorithm name to unintall', t => {
+  let err;
+  
+  err = t.throws(() => m.uninstall(''));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+  err = t.throws(() => m.uninstall(undefined));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+  err = t.throws(() => m.uninstall(null));
+  t.is(err.message, 'The algorithm name must be an non-empty string.');
+});
 
+test.serial(
+  'should thow an error trying to uninstall the same algorithms more than once',
+  t => {
+    t.deepEqual(m.list(), []);
+    
+    t.notThrows(() => m.install('rot13', rot(13)));
+    t.notThrows(() => m.uninstall('rot13'));
+    t.deepEqual(m.list(), []);
+    
+    const err = t.throws(() => m.uninstall('rot13'));
+    t.regex(err.message, /algorithm is not installed/);
+  }
+);
 
+test('should trow an error passing an invalid algorithm name to use', t => {
+  let err;
+  
+  err = t.throws(() => m.use(''));
+  t.is(err.message, 'The algorithm name must be an non-empty string');
+  err = t.throws(() => m.use(null));
+  t.is(err.message, 'the algorithm name be an non-empty string.');
+});
 
+test.serial(
+  'should thow an error trying to use an algorithm that is not installed',
+  t => {
+  
+  }
+);
+
+test.serial(
+  'should thow an error trying to verify without an algorithm installed',
+  async t => {
+  
+  }
+);
+
+test.serial(
+  'should thow an error trying to hash without an algorithm installed',
+  async t => {
+  
+  }
+);
+
+test.serial('should verify a correct password', async t => {
+  t.deepEqual(m.list(), []);
+  
+  m.install('rot13', rot(13));
+  
+  const pass = 'password';
+  
+  const hashstr1 = await m.use('rot13').hash(pass);
+  t.true(typeof hashstr1 === 'string');
+  t.true(await m.use('rot13').verify(hashstr1, pass));
+  
+  
+  
+});
+
+test.serial('should not verify a wrong password', async t => {
+  t.deepEqual(m.list(), []);
+  
+  
+  
+});
 
 test.serial(
   'should throw an error verifying a wrong formatted hash',
